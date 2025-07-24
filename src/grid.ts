@@ -5,10 +5,10 @@ import {
   screenHeight,
   screenWidth,
 } from "./constants";
-import type { TGrid } from "./types";
+import type { TCoor } from "./types";
 
 export function drawGrid(ctx: CanvasRenderingContext2D) {
-  ctx.strokeStyle = "white";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
   ctx.lineWidth = 2;
   ctx.beginPath();
 
@@ -21,11 +21,11 @@ export function drawGrid(ctx: CanvasRenderingContext2D) {
     ctx.moveTo(col * cellSize, 0);
     ctx.lineTo(col * cellSize, screenHeight);
   }
-
   ctx.stroke();
   ctx.closePath();
 }
 
-export function generateGrid(): TGrid {
-  return new Array(gridHeight).fill(() => Array(gridWidth).fill(0));
+export function hasCollidedWithWalls(head: TCoor) {
+  const [headX, headY] = head;
+  return headX < 0 || headX >= gridWidth || headY < 0 || headY >= gridHeight;
 }

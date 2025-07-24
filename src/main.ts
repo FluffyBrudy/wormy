@@ -1,8 +1,12 @@
+import { defaultSnakeBody, HEAD, screenHeight, screenWidth } from "./constants";
 import { drawFood, generateFood } from "./food";
-import { drawGrid } from "./grid";
-import { drawSnake, updateSnake } from "./snake";
+import { drawGrid, hasCollidedWithWalls } from "./grid";
+import { drawSnake, growSnake, updateSnake } from "./snake";
 import "./style.css";
+import { renderTextAligned } from "./text";
 import type { TCoor, TDirection } from "./types";
+import { UIButton } from "./ui/button";
+import { isCoordinateEqual } from "./utils/math.utils";
 
 class Game {
   private ctx: CanvasRenderingContext2D;
@@ -13,11 +17,7 @@ class Game {
   private frameDuration = 1000 / this.fps;
 
   private snakeDirection: TDirection = "LEFT";
-  private snakePositions: Array<TCoor> = [
-    [5, 5],
-    [6, 5],
-    [6, 6],
-  ];
+  private snakePositions: Array<TCoor> = defaultSnakeBody.slice();
   private foodPosition = generateFood(this.snakePositions);
 
   private isPaused = true;
@@ -33,6 +33,8 @@ class Game {
     this.loop = this.loop.bind(this);
 
     this.registerEvents();
+
+    renderTextAligned(50, 50, "PRESS SPACE TO CONTINUE", "start", this.ctx);
   }
 
   private registerEvents() {
@@ -41,17 +43,35 @@ class Game {
         this.isPaused = !this.isPaused;
         return;
       }
-
-      if (e.key == "ArrowLeft") {
+      if (this.isPaused) return;
+      if (e.key == "ArrowLeft" && this.snakeDirection !== "RIGHT") {
         this.updateSnakeDirection("LEFT");
-      } else if (e.key == "ArrowRight") {
+      } else if (e.key == "ArrowRight" && this.snakeDirection !== "LEFT") {
         this.updateSnakeDirection("RIGHT");
-      } else if (e.key == "ArrowUp") {
+      } else if (e.key == "ArrowUp" && this.snakeDirection !== "DOWN") {
         this.updateSnakeDirection("UP");
-      } else if (e.key == "ArrowDown") {
+      } else if (e.key == "ArrowDown" && this.snakeDirection !== "UP") {
         this.updateSnakeDirection("DOWN");
       }
     });
+  }
+
+  private handleFoodCollision() {
+    const hasCollided = isCoordinateEqual(
+      this.snakePositions[HEAD],
+      this.foodPosition
+    );
+    if (hasCollided) {
+      growSnake(this.snakePositions, this.snakeDirection);
+      this.foodPosition = generateFood(this.snakePositions);
+    }
+  }
+
+  private handleWallCollision() {
+    const hasCollided = hasCollidedWithWalls(this.snakePositions[HEAD]);
+    if (hasCollided) {
+      this.snakePositions = defaultSnakeBody.slice();
+    }
   }
 
   public displayWindow() {
@@ -66,18 +86,20 @@ class Game {
     this.snakeDirection = direction;
   }
 
-  public update() {
+  private update() {
     updateSnake(this.snakePositions, this.snakeDirection);
+    this.handleFoodCollision();
+    this.handleWallCollision();
   }
 
-  public draw() {
+  private draw() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     drawGrid(this.ctx);
     drawFood(this.ctx, this.foodPosition);
     drawSnake(this.ctx, this.snakePositions, this.snakeDirection);
   }
 
-  public loop(currentTime: number) {
+  private loop(currentTime: number) {
     if (this.isPaused) {
       requestAnimationFrame(this.loop);
       return;
@@ -94,6 +116,15 @@ class Game {
     requestAnimationFrame(this.loop);
   }
 }
+
+function initCanvas() {
+  const canvas = document.createElement("canvas");
+  canvas.width = screenWidth;
+  canvas.height = screenHeight;
+  document.querySelector("#app")?.appendChild(canvas);
+}
+
+initCanvas();
 
 const game = new Game();
 game.run();
