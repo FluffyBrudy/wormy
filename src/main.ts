@@ -2,11 +2,11 @@ import { defaultSnakeBody, HEAD, screenHeight, screenWidth } from "./constants";
 import { drawFood, generateFood } from "./food";
 import { drawGrid, hasCollidedWithWalls } from "./grid";
 import { drawSnake, growSnake, updateSnake } from "./snake";
-import "./style.css";
-import { renderTextAligned } from "./text";
 import type { TCoor, TDirection } from "./types";
-import { UIButton } from "./ui/button";
+import { createButton } from "./ui/button";
+import { UIMenu } from "./ui/menu";
 import { isCoordinateEqual } from "./utils/math.utils";
+import "./style.css";
 
 class Game {
   private ctx: CanvasRenderingContext2D;
@@ -20,7 +20,8 @@ class Game {
   private snakePositions: Array<TCoor> = defaultSnakeBody.slice();
   private foodPosition = generateFood(this.snakePositions);
 
-  private isPaused = true;
+  private isPaused = false;
+  private isStarted = false;
 
   constructor() {
     console.log(this.foodPosition);
@@ -30,30 +31,33 @@ class Game {
       "2d"
     ) as unknown as CanvasRenderingContext2D;
 
+    this.ctx.beginPath();
+    this.ctx.fillStyle = "black";
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.closePath();
+
     this.loop = this.loop.bind(this);
-
-    this.registerEvents();
-
-    renderTextAligned(50, 50, "PRESS SPACE TO CONTINUE", "start", this.ctx);
   }
 
-  private registerEvents() {
-    window.addEventListener("keydown", (e) => {
-      if (e.key === " ") {
-        this.isPaused = !this.isPaused;
-        return;
-      }
-      if (this.isPaused) return;
-      if (e.key == "ArrowLeft" && this.snakeDirection !== "RIGHT") {
-        this.updateSnakeDirection("LEFT");
-      } else if (e.key == "ArrowRight" && this.snakeDirection !== "LEFT") {
-        this.updateSnakeDirection("RIGHT");
-      } else if (e.key == "ArrowUp" && this.snakeDirection !== "DOWN") {
-        this.updateSnakeDirection("UP");
-      } else if (e.key == "ArrowDown" && this.snakeDirection !== "UP") {
-        this.updateSnakeDirection("DOWN");
-      }
-    });
+  public startGame() {
+    this.isStarted = true;
+  }
+
+  public pauseGame() {
+    if (!this.isStarted) return;
+    this.isPaused = true;
+  }
+
+  public resumeGame() {
+    if (!this.isStarted) return;
+    this.isPaused = false;
+  }
+
+  public getGameStatus() {
+    return {
+      isStarted: this.isStarted,
+      isPaused: this.isPaused,
+    };
   }
 
   private handleFoodCollision() {
@@ -71,6 +75,7 @@ class Game {
     const hasCollided = hasCollidedWithWalls(this.snakePositions[HEAD]);
     if (hasCollided) {
       this.snakePositions = defaultSnakeBody.slice();
+      this.isPaused = true;
     }
   }
 
@@ -82,11 +87,16 @@ class Game {
     return this.canvas;
   }
 
-  private updateSnakeDirection(direction: TDirection) {
+  public updateSnakeDirection(direction: TDirection) {
     this.snakeDirection = direction;
   }
 
+  public getSnakeDirection() {
+    return this.snakeDirection;
+  }
+
   private update() {
+    if (this.isPaused || !this.isStarted) return;
     updateSnake(this.snakePositions, this.snakeDirection);
     this.handleFoodCollision();
     this.handleWallCollision();
@@ -100,7 +110,7 @@ class Game {
   }
 
   private loop(currentTime: number) {
-    if (this.isPaused) {
+    if (!this.isStarted) {
       requestAnimationFrame(this.loop);
       return;
     }
@@ -117,14 +127,88 @@ class Game {
   }
 }
 
-function initCanvas() {
-  const canvas = document.createElement("canvas");
-  canvas.width = screenWidth;
-  canvas.height = screenHeight;
-  document.querySelector("#app")?.appendChild(canvas);
+class GameController {
+  private game: Game;
+  private startMenu: UIMenu;
+  private pauseMenu: UIMenu;
+
+  constructor() {
+    const canvasRect = this.initCanvas();
+
+    this.game = new Game();
+    this.startMenu = new UIMenu();
+    this.pauseMenu = new UIMenu();
+
+    this.startMenu.add(
+      createButton("Start", () => {
+        this.game.startGame();
+        this.startMenu.hide();
+      })
+    );
+    this.pauseMenu.add(
+      createButton("Resume", () => {
+        this.game.resumeGame();
+        this.pauseMenu.hide();
+      })
+    );
+
+    this.startMenu.mount(document.body);
+    this.pauseMenu.mount(document.body);
+    this.startMenu.show();
+    this.pauseMenu.hide();
+
+    requestAnimationFrame(() => {
+      this.startMenu.resize(canvasRect.width + 10, canvasRect.height + 10);
+      this.startMenu.setAt(
+        canvasRect.right - canvasRect.width / 2,
+        canvasRect.bottom - canvasRect.height / 2
+      );
+      this.pauseMenu.setAt(
+        canvasRect.right - canvasRect.width / 2,
+        canvasRect.bottom - canvasRect.height / 2
+      );
+    });
+
+    this.registerEvents();
+    this.game.run();
+  }
+
+  private initCanvas() {
+    const canvas = document.createElement("canvas");
+    canvas.width = screenWidth;
+    canvas.height = screenHeight;
+    document.querySelector("#app")?.appendChild(canvas);
+    const { right, bottom, width, height } = canvas.getBoundingClientRect();
+    return { right, bottom, width, height };
+  }
+
+  private registerEvents() {
+    window.addEventListener("keydown", (e) => {
+      const { isPaused, isStarted } = this.game.getGameStatus();
+
+      if (e.key === "Escape") {
+        if (isPaused) {
+          this.game.resumeGame();
+          this.pauseMenu.hide();
+        } else {
+          this.game.pauseGame();
+          this.pauseMenu.show();
+        }
+      }
+
+      if (isPaused || !isStarted) return;
+      const snakeDirection = this.game.getSnakeDirection();
+      if (e.key == "ArrowLeft" && snakeDirection !== "RIGHT") {
+        this.game.updateSnakeDirection("LEFT");
+      } else if (e.key == "ArrowRight" && snakeDirection !== "LEFT") {
+        this.game.updateSnakeDirection("RIGHT");
+      } else if (e.key == "ArrowUp" && snakeDirection !== "DOWN") {
+        this.game.updateSnakeDirection("UP");
+      } else if (e.key == "ArrowDown" && snakeDirection !== "UP") {
+        this.game.updateSnakeDirection("DOWN");
+      }
+    });
+  }
 }
 
-initCanvas();
-
-const game = new Game();
-game.run();
+new GameController();

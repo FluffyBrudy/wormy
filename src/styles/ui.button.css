@@ -1,0 +1,42 @@
+
+.ui-btn {
+  position: relative;
+  overflow: hidden;
+  padding: 10px 20px;
+  font-size: 16px;
+  color: white;
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.1s ease-in-out, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.ui-btn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.25);
+}
+
+.ui-btn:active {
+  transform: scale(0.97);
+}
+
+.ui-btn .ripple {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+  animation: ripple-animation 0.6s linear;
+}
+
+@keyframes ripple-animation {
+  to {
+    transform: scale(10);
+    opacity: 0;
+  }
+}
