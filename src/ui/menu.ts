@@ -13,6 +13,50 @@ export class UIMenu {
     this.element.appendChild(child);
   }
 
+  addRadioOptions(
+    toggleBtnLabel: string,
+    callback: Record<string, CallableFunction>
+  ): void {
+    const container = document.createElement("div");
+    container.className = "radio-options-container";
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.textContent = toggleBtnLabel;
+    toggleBtn.className = "radio-toggle-button";
+    container.appendChild(toggleBtn);
+
+    const btnGroup = document.createElement("div");
+    btnGroup.className = "radio-options-group";
+    btnGroup.style.display = "none"; // Initially hidden
+
+    let selectedBtn: HTMLButtonElement | null = null;
+
+    Object.entries(callback).forEach(([key, cb]) => {
+      const btn = document.createElement("button");
+      btn.textContent = key;
+      btn.className = "radio-button";
+
+      btn.onclick = () => {
+        if (selectedBtn) {
+          selectedBtn.classList.remove("selected");
+        }
+        btn.classList.add("selected");
+        selectedBtn = btn;
+        cb(key);
+      };
+
+      btnGroup.appendChild(btn);
+    });
+
+    toggleBtn.onclick = () => {
+      const isVisible = btnGroup.style.display === "flex";
+      btnGroup.style.display = isVisible ? "none" : "flex";
+    };
+
+    container.appendChild(btnGroup);
+    this.element.appendChild(container);
+  }
+
   mount(target: HTMLElement): void {
     target.appendChild(this.element);
   }
@@ -20,10 +64,9 @@ export class UIMenu {
   setAt(x: number, y: number): void {
     this.element.style.position = "absolute";
 
-    const { width, height } = this.element.getBoundingClientRect();
-
-    this.element.style.left = `${x - width / 2}px`;
-    this.element.style.top = `${y - height / 2}px`;
+    this.element.style.left = `${x}px`;
+    this.element.style.top = `${y}px`;
+    this.element.style.transform = "translate(-50%,-50%)";
   }
 
   clear(): void {

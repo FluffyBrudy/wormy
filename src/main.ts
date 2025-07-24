@@ -23,6 +23,8 @@ class Game {
   private isPaused = false;
   private isStarted = false;
 
+  private onPauseCallback: CallableFunction | null = null;
+
   constructor() {
     console.log(this.foodPosition);
 
@@ -46,6 +48,7 @@ class Game {
   public pauseGame() {
     if (!this.isStarted) return;
     this.isPaused = true;
+    this.onPauseCallback?.();
   }
 
   public resumeGame() {
@@ -58,6 +61,10 @@ class Game {
       isStarted: this.isStarted,
       isPaused: this.isPaused,
     };
+  }
+
+  public setOnPauseCallback(callback: CallableFunction) {
+    this.onPauseCallback = callback;
   }
 
   private handleFoodCollision() {
@@ -76,6 +83,7 @@ class Game {
     if (hasCollided) {
       this.snakePositions = defaultSnakeBody.slice();
       this.isPaused = true;
+      this.onPauseCallback?.();
     }
   }
 
@@ -145,6 +153,12 @@ class GameController {
         this.startMenu.hide();
       })
     );
+    this.startMenu.addRadioOptions("Difficulty", {
+      easy: () => console.log("easy"),
+      normal: () => console.log("normal"),
+      hard: () => console.log("hard"),
+    });
+
     this.pauseMenu.add(
       createButton("Resume", () => {
         this.game.resumeGame();
@@ -169,6 +183,9 @@ class GameController {
       );
     });
 
+    this.game.setOnPauseCallback(() => {
+      this.pauseMenu.show();
+    });
     this.registerEvents();
     this.game.run();
   }

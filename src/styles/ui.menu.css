@@ -7,3 +7,42 @@
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
+
+.radio-options-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.radio-options-label {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.radio-options-group {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.radio-button {
+  padding: 0.5rem 1rem;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.radio-button:hover {
+  background-color: #ddd;
+}
+
+.radio-button.selected {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
