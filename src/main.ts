@@ -1,5 +1,5 @@
 import { defaultSnakeBody, HEAD, screenHeight, screenWidth } from "./constants";
-import { drawFood, generateFood } from "./food";
+import { drawFood, foodAnimationHandler, generateFood } from "./food";
 import { drawGrid, hasCollidedWithWalls } from "./grid";
 import { drawSnake, growSnake, updateSnake } from "./snake";
 import type { TCoor, TDirection } from "./types";
@@ -18,7 +18,10 @@ class Game {
 
   private snakeDirection: TDirection = "LEFT";
   private snakePositions: Array<TCoor> = defaultSnakeBody.slice();
+
   private foodPosition = generateFood(this.snakePositions);
+  private foodAnimationHandler: ReturnType<typeof foodAnimationHandler>;
+  private foodCounts = { basic: 0 };
 
   private isPaused = false;
   private isStarted = false;
@@ -26,8 +29,7 @@ class Game {
   private onPauseCallback: CallableFunction | null = null;
 
   constructor() {
-    console.log(this.foodPosition);
-
+    this.foodAnimationHandler = foodAnimationHandler();
     this.canvas = document.querySelector<HTMLCanvasElement>("canvas")!;
     this.ctx = this.canvas.getContext(
       "2d"
@@ -69,6 +71,16 @@ class Game {
     };
   }
 
+  public resetAttributes() {
+    this.snakeDirection = "LEFT";
+    this.snakePositions = defaultSnakeBody.slice();
+    this.foodCounts.basic = 0;
+  }
+
+  getFoodsCount() {
+    return this.foodCounts;
+  }
+
   public setOnPauseCallback(callback: CallableFunction) {
     this.onPauseCallback = callback;
   }
@@ -80,6 +92,7 @@ class Game {
     );
     if (hasCollided) {
       growSnake(this.snakePositions, this.snakeDirection);
+      this.foodCounts.basic += 1;
       this.foodPosition = generateFood(this.snakePositions);
     }
   }
@@ -112,6 +125,7 @@ class Game {
   private update() {
     if (this.isPaused || !this.isStarted) return;
     updateSnake(this.snakePositions, this.snakeDirection);
+    this.foodAnimationHandler.animate();
     this.handleFoodCollision();
     this.handleWallCollision();
   }
@@ -119,7 +133,7 @@ class Game {
   private draw() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     drawGrid(this.ctx);
-    drawFood(this.ctx, this.foodPosition);
+    drawFood(this.ctx, this.foodPosition, this.foodAnimationHandler.getScale());
     drawSnake(this.ctx, this.snakePositions, this.snakeDirection);
   }
 
@@ -171,6 +185,12 @@ class GameController {
         this.pauseMenu.hide();
       })
     );
+    this.pauseMenu.add(
+      createButton("Main Menu", () => {
+        this.pauseMenu.hide();
+        this.startMenu.show();
+      })
+    );
 
     this.startMenu.mount(document.body);
     this.pauseMenu.mount(document.body);
@@ -206,13 +226,11 @@ class GameController {
       const { isPaused, isStarted } = this.game.getGameStatus();
 
       if (e.key === "Escape") {
-        if (isPaused) {
-          this.game.resumeGame();
-          this.pauseMenu.hide();
-        } else {
+        if (!isPaused) {
           this.game.pauseGame();
           this.pauseMenu.show();
         }
+        return;
       }
 
       if (isPaused || !isStarted) return;
