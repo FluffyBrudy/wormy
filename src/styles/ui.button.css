@@ -46,6 +46,15 @@
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
+.ui-btn:focus {
+  box-shadow:
+    0 0 0 4px rgba(255, 255, 255, 0.2),
+    0 0 0 8px rgba(102, 126, 234, 0.4),
+    0 12px 35px rgba(102, 126, 234, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  outline: none;
+}
+
 .ui-btn .ripple {
   position: absolute;
   width: 20px;

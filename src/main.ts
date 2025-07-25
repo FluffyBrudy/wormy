@@ -66,6 +66,7 @@ class Game {
     const choices = { easy: 10, normal: 14, hard: 18 };
     this.fps = choices[mode];
     this.frameDuration = 1000 / this.fps;
+    console.log(this.frameDuration);
   }
 
   public startGame() {
@@ -95,6 +96,9 @@ class Game {
     this.snakePositions = defaultSnakeBody.slice();
     this.foodCounts.basic = 0;
     this.scoreDisplay.reset();
+    this.isPaused = false;
+    this.isStarted = false;
+    this.foodPosition = generateFood(this.snakePositions);
   }
 
   getFoodsCount() {

@@ -8,6 +8,7 @@ export class GameOverlay {
     this.element.className = "game-overlay";
     this.createElement();
     this.startParticleSystem();
+    this.attachContinueButtonListener();
   }
 
   private createElement() {
@@ -19,6 +20,7 @@ export class GameOverlay {
         </div>
         <div class="game-subtitle">The Ultimate Snake Experience</div>
         <div class="particle-container"></div>
+        <button class="continue-btn">Click to Continue</button>
       </div>
     `;
   }
@@ -50,6 +52,15 @@ export class GameOverlay {
     setTimeout(() => {
       particle.remove();
     }, 7000);
+  }
+
+  private attachContinueButtonListener() {
+    this.element.addEventListener("click", (event) => {
+      const target = event.target as HTMLElement;
+      if (target.classList.contains("continue-btn")) {
+        this.hide();
+      }
+    });
   }
 
   public mount(target: HTMLElement) {

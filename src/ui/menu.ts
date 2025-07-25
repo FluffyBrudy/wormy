@@ -80,6 +80,7 @@ export class UIMenu {
     this.element.style.display = "";
     this.element.setAttribute("aria-hidden", "false");
     this.element.style.pointerEvents = "auto";
+    this.element.querySelector("button")?.focus();
   }
 
   hide(): void {
