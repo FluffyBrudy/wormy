@@ -7,3 +7,6 @@ export type TRadius = number;
 export type TDirection = keyof typeof DIRECTIONS;
 
 export type TAlignment = "center" | "end" | "left" | "start";
+
+export type TCallbackMapActions = "pause" | "over";
+export type TCallbackMap = Record<TCallbackMapActions, CallableFunction>;

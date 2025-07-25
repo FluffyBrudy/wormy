@@ -7,8 +7,13 @@ import {
 } from "./constants";
 import { drawFood, foodAnimationHandler, generateFood } from "./food";
 import { drawGrid, hasCollidedWithWalls } from "./grid";
-import { drawSnake, growSnake, updateSnake } from "./snake";
-import type { TCoor, TDirection } from "./types";
+import {
+  drawSnake,
+  growSnake,
+  hasCollidedWithSelf,
+  updateSnake,
+} from "./snake";
+import type { TCallbackMap, TCoor, TDirection } from "./types";
 import { createButton } from "./ui/button";
 import { UIMenu } from "./ui/menu";
 import { isCoordinateEqual } from "./utils/math.utils";
@@ -32,7 +37,10 @@ class Game {
   private isPaused = false;
   private isStarted = false;
 
-  private onPauseCallback: CallableFunction | null = null;
+  private callbackMap: TCallbackMap = {
+    pause: () => "Abstracted, passed externally",
+    over: () => "Abstracted, pass externallyx",
+  };
 
   constructor() {
     this.foodAnimationHandler = foodAnimationHandler();
@@ -62,7 +70,7 @@ class Game {
   public pauseGame() {
     if (!this.isStarted) return;
     this.isPaused = true;
-    this.onPauseCallback?.();
+    this.callbackMap.pause();
   }
 
   public resumeGame() {
@@ -87,8 +95,9 @@ class Game {
     return this.foodCounts;
   }
 
-  public setOnPauseCallback(callback: CallableFunction) {
-    this.onPauseCallback = callback;
+  public setCallbacks(callbacksMap: TCallbackMap) {
+    this.callbackMap.pause = callbacksMap.pause;
+    this.callbackMap.over = callbacksMap.over;
   }
 
   private handleFoodCollision() {
@@ -108,7 +117,13 @@ class Game {
     if (hasCollided) {
       this.snakePositions = defaultSnakeBody.slice();
       this.isPaused = true;
-      this.onPauseCallback?.();
+      this.callbackMap.pause();
+    }
+  }
+
+  private handleSelfCOllision() {
+    if (hasCollidedWithSelf(this.snakePositions)) {
+      this.callbackMap.over();
     }
   }
 
@@ -134,6 +149,7 @@ class Game {
     this.foodAnimationHandler.animate();
     this.handleFoodCollision();
     this.handleWallCollision();
+    this.handleSelfCOllision();
   }
 
   private draw() {
@@ -197,6 +213,7 @@ class GameController {
       createButton("Main Menu", () => {
         this.pauseMenu.hide();
         this.startMenu.show();
+        this.game.resetAttributes();
       })
     );
 
@@ -209,9 +226,11 @@ class GameController {
       this.startMenu.resize(canvasRect.width + 10, canvasRect.height + 10);
     });
 
-    this.game.setOnPauseCallback(() => {
-      this.pauseMenu.show();
+    this.game.setCallbacks({
+      pause: () => this.pauseMenu.show(),
+      over: () => this.startMenu.show(),
     });
+
     this.registerEvents();
     this.game.run();
   }
@@ -234,9 +253,10 @@ class GameController {
       const timeDiff = Date.now() - this.eventTimer;
       if (timeDiff < eventDelay) return;
       this.eventTimer = Date.now();
+
       const { isPaused, isStarted } = this.game.getGameStatus();
-      console.log(e.key);
-      if (e.key === "Escape") {
+
+      if (e.key === "Escape" && isStarted) {
         if (!isPaused) {
           this.game.pauseGame();
           this.pauseMenu.show();
@@ -259,4 +279,6 @@ class GameController {
   }
 }
 
-new GameController();
+window.onload = () => {
+  new GameController();
+};

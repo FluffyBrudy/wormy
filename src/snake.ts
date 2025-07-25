@@ -1,5 +1,6 @@
 import { cellSize, DIRECTIONS, HEAD } from "./constants";
 import type { TCoor, TDirection } from "./types";
+import { isCoordinateEqual } from "./utils/math.utils";
 
 type TSegment = "head" | "body" | "tail";
 
@@ -106,4 +107,10 @@ function drawSnakeEye(
   ctx.fill();
   ctx.stroke();
   ctx.closePath();
+}
+
+export function hasCollidedWithSelf(positions: Array<TCoor>) {
+  return positions
+    .slice(1)
+    .some((coor) => isCoordinateEqual(positions[HEAD], coor));
 }
