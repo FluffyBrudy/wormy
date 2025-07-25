@@ -18,6 +18,8 @@ import { createButton } from "./ui/button";
 import { UIMenu } from "./ui/menu";
 import { isCoordinateEqual } from "./utils/math.utils";
 import "./style.css";
+import { ScoreDisplay } from "./ui/score-display";
+import { GameOverlay } from "./ui/game-overlay";
 
 class Game {
   private ctx: CanvasRenderingContext2D;
@@ -42,6 +44,8 @@ class Game {
     over: () => "Abstracted, pass externallyx",
   };
 
+  private scoreDisplay: ScoreDisplay;
+
   constructor() {
     this.foodAnimationHandler = foodAnimationHandler();
     this.canvas = document.querySelector<HTMLCanvasElement>("canvas")!;
@@ -55,6 +59,7 @@ class Game {
     this.ctx.closePath();
 
     this.loop = this.loop.bind(this);
+    this.scoreDisplay = new ScoreDisplay();
   }
 
   public setDifficulty(mode: "easy" | "normal" | "hard") {
@@ -89,6 +94,7 @@ class Game {
     this.snakeDirection = "LEFT";
     this.snakePositions = defaultSnakeBody.slice();
     this.foodCounts.basic = 0;
+    this.scoreDisplay.reset();
   }
 
   getFoodsCount() {
@@ -108,6 +114,7 @@ class Game {
     if (hasCollided) {
       growSnake(this.snakePositions, this.snakeDirection);
       this.foodCounts.basic += 1;
+      this.scoreDisplay.updateScore(this.foodCounts.basic);
       this.foodPosition = generateFood(this.snakePositions);
     }
   }
@@ -122,7 +129,8 @@ class Game {
   }
 
   private handleSelfCOllision() {
-    if (hasCollidedWithSelf(this.snakePositions)) {
+    const hasCollided = hasCollidedWithSelf(this.snakePositions);
+    if (hasCollided) {
       this.callbackMap.over();
     }
   }
@@ -175,6 +183,10 @@ class Game {
   public run() {
     requestAnimationFrame(this.loop);
   }
+
+  public getScoreDisplay() {
+    return this.scoreDisplay;
+  }
 }
 
 class GameController {
@@ -183,11 +195,19 @@ class GameController {
   private pauseMenu: UIMenu;
 
   private eventTimer = 0;
+  private canvasRect: ReturnType<typeof this.initCanvas>;
 
   constructor() {
     const canvasRect = this.initCanvas();
+    this.canvasRect = canvasRect;
 
     this.game = new Game();
+    const gameOverlay = new GameOverlay();
+    gameOverlay.mount(document.body);
+
+    this.game.getScoreDisplay().mount(document.body);
+    this.game.getScoreDisplay().show();
+
     this.startMenu = new UIMenu();
     this.pauseMenu = new UIMenu();
 
@@ -195,6 +215,7 @@ class GameController {
       createButton("Start", () => {
         this.game.startGame();
         this.startMenu.hide();
+        gameOverlay.hide();
       })
     );
     this.startMenu.addRadioOptions("Difficulty", {
@@ -224,6 +245,20 @@ class GameController {
 
     requestAnimationFrame(() => {
       this.startMenu.resize(canvasRect.width + 10, canvasRect.height + 10);
+      this.startMenu.setAt(
+        this.canvasRect.left + this.canvasRect.width / 2,
+        this.canvasRect.top + this.canvasRect.height / 2
+      );
+      this.pauseMenu.setAt(
+        this.canvasRect.left + this.canvasRect.width / 2,
+        this.canvasRect.top + this.canvasRect.height / 2
+      );
+      this.game
+        .getScoreDisplay()
+        .setAt(
+          this.canvasRect.left + canvasRect.width / 2,
+          this.canvasRect.top
+        );
     });
 
     this.game.setCallbacks({
@@ -244,8 +279,7 @@ class GameController {
     canvas.width = screenWidth;
     canvas.height = screenHeight;
     document.querySelector("#app")?.appendChild(canvas);
-    const { right, bottom, width, height } = canvas.getBoundingClientRect();
-    return { right, bottom, width, height };
+    return canvas.getBoundingClientRect();
   }
 
   private registerEvents() {

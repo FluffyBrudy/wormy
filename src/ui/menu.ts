@@ -4,9 +4,16 @@ import { createButton } from "./button";
 export class UIMenu {
   public readonly element: HTMLDivElement;
 
-  constructor() {
+  constructor(title?: string) {
     this.element = document.createElement("div");
     this.element.className = "ui-menu";
+
+    if (title) {
+      const titleElement = document.createElement("h1");
+      titleElement.textContent = title;
+      this.element.appendChild(titleElement);
+    }
+
     this.hide();
   }
 
@@ -61,10 +68,8 @@ export class UIMenu {
 
   setAt(x: number, y: number): void {
     this.element.style.position = "absolute";
-
     this.element.style.left = `${x}px`;
     this.element.style.top = `${y}px`;
-    this.element.style.transform = "translate(-50%,-50%)";
   }
 
   clear(): void {

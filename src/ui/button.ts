@@ -2,10 +2,11 @@ import "../styles/ui.button.css";
 
 export function createButton(
   text: string,
-  onClick: () => void
+  onClick: () => void,
+  variant: "default" | "primary" | "danger" = "default"
 ): HTMLButtonElement {
   const button = document.createElement("button");
-  button.className = "ui-btn";
+  button.className = `ui-btn ${variant !== "default" ? variant : ""}`;
   button.textContent = text;
 
   button.addEventListener("click", onClick);
