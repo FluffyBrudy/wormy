@@ -1,4 +1,5 @@
 import "../styles/ui.menu.css";
+import { createButton } from "./button";
 
 export class UIMenu {
   public readonly element: HTMLDivElement;
@@ -20,21 +21,23 @@ export class UIMenu {
     const container = document.createElement("div");
     container.className = "radio-options-container";
 
-    const toggleBtn = document.createElement("button");
-    toggleBtn.textContent = toggleBtnLabel;
-    toggleBtn.className = "radio-toggle-button";
+    const toggleBtn = createButton(toggleBtnLabel, () => {
+      const isVisible = btnGroup.style.display === "flex";
+      btnGroup.style.display = isVisible ? "none" : "flex";
+    });
+
     container.appendChild(toggleBtn);
 
     const btnGroup = document.createElement("div");
     btnGroup.className = "radio-options-group";
-    btnGroup.style.display = "none"; // Initially hidden
+    btnGroup.style.display = "none";
 
     let selectedBtn: HTMLButtonElement | null = null;
 
     Object.entries(callback).forEach(([key, cb]) => {
       const btn = document.createElement("button");
       btn.textContent = key;
-      btn.className = "radio-button";
+      btn.className = "radio-button ui-btn";
 
       btn.onclick = () => {
         if (selectedBtn) {
@@ -47,11 +50,6 @@ export class UIMenu {
 
       btnGroup.appendChild(btn);
     });
-
-    toggleBtn.onclick = () => {
-      const isVisible = btnGroup.style.display === "flex";
-      btnGroup.style.display = isVisible ? "none" : "flex";
-    };
 
     container.appendChild(btnGroup);
     this.element.appendChild(container);

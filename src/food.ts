@@ -3,6 +3,10 @@ import type { TCoor } from "./types";
 import { choice, shuffle } from "./utils/random";
 
 export function drawFood(ctx: CanvasRenderingContext2D, foodCoor: TCoor) {
+  if (!foodCoor) {
+    alert(`${foodCoor}`);
+    throw new Error("not valid coor");
+  }
   const x = cellSize * foodCoor[0] + cellSize / 2;
   const y = cellSize * foodCoor[1] + cellSize / 2;
   ctx.beginPath();

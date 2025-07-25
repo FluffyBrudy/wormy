@@ -41,6 +41,12 @@ class Game {
     this.loop = this.loop.bind(this);
   }
 
+  public setDifficulty(mode: "easy" | "normal" | "hard") {
+    const choices = { easy: 10, normal: 14, hard: 18 };
+    this.fps = choices[mode];
+    this.frameDuration = 1000 / this.fps;
+  }
+
   public startGame() {
     this.isStarted = true;
   }
@@ -154,9 +160,9 @@ class GameController {
       })
     );
     this.startMenu.addRadioOptions("Difficulty", {
-      easy: () => console.log("easy"),
-      normal: () => console.log("normal"),
-      hard: () => console.log("hard"),
+      easy: () => this.game.setDifficulty("easy"),
+      normal: () => this.game.setDifficulty("normal"),
+      hard: () => this.game.setDifficulty("hard"),
     });
 
     this.pauseMenu.add(
@@ -173,14 +179,6 @@ class GameController {
 
     requestAnimationFrame(() => {
       this.startMenu.resize(canvasRect.width + 10, canvasRect.height + 10);
-      this.startMenu.setAt(
-        canvasRect.right - canvasRect.width / 2,
-        canvasRect.bottom - canvasRect.height / 2
-      );
-      this.pauseMenu.setAt(
-        canvasRect.right - canvasRect.width / 2,
-        canvasRect.bottom - canvasRect.height / 2
-      );
     });
 
     this.game.setOnPauseCallback(() => {
@@ -192,6 +190,10 @@ class GameController {
 
   private initCanvas() {
     const canvas = document.createElement("canvas");
+    window.addEventListener("reset", () => {
+      canvas.width = screenWidth;
+      canvas.height = screenHeight;
+    });
     canvas.width = screenWidth;
     canvas.height = screenHeight;
     document.querySelector("#app")?.appendChild(canvas);
