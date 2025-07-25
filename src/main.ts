@@ -1,4 +1,10 @@
-import { defaultSnakeBody, HEAD, screenHeight, screenWidth } from "./constants";
+import {
+  defaultSnakeBody,
+  eventDelay,
+  HEAD,
+  screenHeight,
+  screenWidth,
+} from "./constants";
 import { drawFood, foodAnimationHandler, generateFood } from "./food";
 import { drawGrid, hasCollidedWithWalls } from "./grid";
 import { drawSnake, growSnake, updateSnake } from "./snake";
@@ -160,6 +166,8 @@ class GameController {
   private startMenu: UIMenu;
   private pauseMenu: UIMenu;
 
+  private eventTimer = 0;
+
   constructor() {
     const canvasRect = this.initCanvas();
 
@@ -223,8 +231,11 @@ class GameController {
 
   private registerEvents() {
     window.addEventListener("keydown", (e) => {
+      const timeDiff = Date.now() - this.eventTimer;
+      if (timeDiff < eventDelay) return;
+      this.eventTimer = Date.now();
       const { isPaused, isStarted } = this.game.getGameStatus();
-
+      console.log(e.key);
       if (e.key === "Escape") {
         if (!isPaused) {
           this.game.pauseGame();

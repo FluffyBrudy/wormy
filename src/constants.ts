@@ -26,3 +26,5 @@ export const defaultSnakeBody: Array<TCoor> = [
   [6, 5],
   [6, 6],
 ];
+
+export const eventDelay = 50;
