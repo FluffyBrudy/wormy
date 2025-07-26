@@ -1,4 +1,4 @@
-import type { TCoor, TRadius } from "./types";
+import type { TCoor, TDirection, TRadius } from "./types";
 
 export const screenWidth = 810;
 export const screenHeight = 510;
@@ -22,9 +22,10 @@ export const DIRECTIONS = {
 } as const;
 
 export const defaultSnakeBody: Array<TCoor> = [
-  [5, 5],
   [6, 5],
+  [5, 5],
   [6, 6],
 ];
+export const defaultDir: TDirection = "RIGHT";
 
 export const eventDelay = 50;

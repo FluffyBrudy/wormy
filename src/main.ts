@@ -1,4 +1,5 @@
 import {
+  defaultDir,
   defaultSnakeBody,
   eventDelay,
   HEAD,
@@ -24,6 +25,7 @@ import { GameOverScreen } from "./ui/game-over-screen";
 import { SoundManager } from "./audio/sound-manager";
 import { ParticleSystem } from "./effects/particle-system";
 import { ScreenShake } from "./effects/screen-shake";
+import { drawFoggyBackground } from "./environments/foggy-env";
 
 class Game {
   private ctx: CanvasRenderingContext2D;
@@ -33,7 +35,7 @@ class Game {
   private lastFrameTime = 0;
   private frameDuration = 1000 / this.fps;
 
-  private snakeDirection: TDirection = "LEFT";
+  private snakeDirection: TDirection = defaultDir;
   private snakePositions: Array<TCoor> = defaultSnakeBody.slice();
 
   private foodPosition = generateFood(this.snakePositions);
@@ -107,7 +109,7 @@ class Game {
   }
 
   public resetAttributes() {
-    this.snakeDirection = "LEFT";
+    this.snakeDirection = defaultDir;
     this.snakePositions = defaultSnakeBody.slice();
     this.foodCounts.basic = 0;
     this.maxSnakeLength = 3;
@@ -135,7 +137,7 @@ class Game {
     if (hasCollided) {
       this.soundManager.play("eat");
       this.particleSystem.createFoodParticles(this.foodPosition);
-      growSnake(this.snakePositions, this.snakeDirection);
+      growSnake(this.snakePositions);
       this.foodCounts.basic += 1;
       this.maxSnakeLength = Math.max(
         this.maxSnakeLength,
@@ -204,6 +206,7 @@ class Game {
     this.ctx.save();
     this.ctx.translate(shakeX, shakeY);
 
+    drawFoggyBackground(this.ctx);
     drawGrid(this.ctx);
     drawFood(this.ctx, this.foodPosition, this.foodAnimationHandler.getScale());
     drawSnake(this.ctx, this.snakePositions, this.snakeDirection);
