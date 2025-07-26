@@ -20,7 +20,6 @@ import { isCoordinateEqual } from "./utils/math.utils";
 import "./style.css";
 import { ScoreDisplay } from "./ui/score-display";
 import { GameOverlay } from "./ui/game-overlay";
-import { Queue } from "@typinghare/stack-queue";
 
 class Game {
   private ctx: CanvasRenderingContext2D;
