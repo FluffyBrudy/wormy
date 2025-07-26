@@ -20,6 +20,10 @@ import { isCoordinateEqual } from "./utils/math.utils";
 import "./style.css";
 import { ScoreDisplay } from "./ui/score-display";
 import { GameOverlay } from "./ui/game-overlay";
+import { GameOverScreen } from "./ui/game-over-screen";
+import { SoundManager } from "./audio/sound-manager";
+import { ParticleSystem } from "./effects/particle-system";
+import { ScreenShake } from "./effects/screen-shake";
 
 class Game {
   private ctx: CanvasRenderingContext2D;
@@ -34,7 +38,7 @@ class Game {
 
   private foodPosition = generateFood(this.snakePositions);
   private foodAnimationHandler: ReturnType<typeof foodAnimationHandler>;
-  private foodCounts = { basic: 0 };
+  private foodCounts = { basic: 100 };
 
   private isPaused = false;
   private isStarted = false;
@@ -45,6 +49,12 @@ class Game {
   };
 
   private scoreDisplay: ScoreDisplay;
+  private gameOverScreen: GameOverScreen;
+  private soundManager: SoundManager;
+  private particleSystem: ParticleSystem;
+  private screenShake: ScreenShake;
+  private gameStartTime = 0;
+  private maxSnakeLength = 3;
 
   constructor() {
     this.foodAnimationHandler = foodAnimationHandler();
@@ -60,6 +70,10 @@ class Game {
 
     this.loop = this.loop.bind(this);
     this.scoreDisplay = new ScoreDisplay();
+    this.gameOverScreen = new GameOverScreen();
+    this.soundManager = new SoundManager();
+    this.particleSystem = new ParticleSystem();
+    this.screenShake = new ScreenShake();
   }
 
   public setDifficulty(mode: "easy" | "normal" | "hard") {
@@ -71,6 +85,7 @@ class Game {
 
   public startGame() {
     this.isStarted = true;
+    this.gameStartTime = Date.now();
   }
 
   public pauseGame() {
@@ -95,8 +110,11 @@ class Game {
     this.snakeDirection = "LEFT";
     this.snakePositions = defaultSnakeBody.slice();
     this.foodCounts.basic = 0;
+    this.maxSnakeLength = 3;
     this.scoreDisplay.reset();
-    this.isPaused = true;
+    this.isPaused = false;
+    this.isStarted = false;
+    this.particleSystem.clear();
     this.foodPosition = generateFood(this.snakePositions);
   }
 
@@ -115,8 +133,14 @@ class Game {
       this.foodPosition
     );
     if (hasCollided) {
+      this.soundManager.play("eat");
+      this.particleSystem.createFoodParticles(this.foodPosition);
       growSnake(this.snakePositions, this.snakeDirection);
       this.foodCounts.basic += 1;
+      this.maxSnakeLength = Math.max(
+        this.maxSnakeLength,
+        this.snakePositions.length
+      );
       this.scoreDisplay.updateScore(this.foodCounts.basic);
       this.foodPosition = generateFood(this.snakePositions);
     }
@@ -125,7 +149,10 @@ class Game {
   private handleWallCollision() {
     const hasCollided = hasCollidedWithWalls(this.snakePositions[HEAD]);
     if (hasCollided) {
-      this.snakePositions = defaultSnakeBody.slice();
+      this.particleSystem.createCollisionParticles(this.snakePositions[HEAD]);
+      this.screenShake.shake(10, 20);
+      this.soundManager.play("gameOver");
+      this.isStarted = false;
       this.isPaused = true;
       this.callbackMap.over();
     }
@@ -134,6 +161,11 @@ class Game {
   private handleSelfCOllision() {
     const hasCollided = hasCollidedWithSelf(this.snakePositions);
     if (hasCollided) {
+      this.particleSystem.createCollisionParticles(this.snakePositions[HEAD]);
+      this.screenShake.shake(8, 15);
+      this.soundManager.play("gameOver");
+      this.isStarted = false;
+      this.isPaused = true;
       this.callbackMap.over();
     }
   }
@@ -158,6 +190,8 @@ class Game {
     if (this.isPaused || !this.isStarted) return;
     updateSnake(this.snakePositions, this.snakeDirection);
     this.foodAnimationHandler.animate();
+    this.particleSystem.update();
+    this.screenShake.update();
     this.handleFoodCollision();
     this.handleWallCollision();
     this.handleSelfCOllision();
@@ -165,9 +199,17 @@ class Game {
 
   private draw() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    const [shakeX, shakeY] = this.screenShake.getOffset();
+    this.ctx.save();
+    this.ctx.translate(shakeX, shakeY);
+
     drawGrid(this.ctx);
     drawFood(this.ctx, this.foodPosition, this.foodAnimationHandler.getScale());
     drawSnake(this.ctx, this.snakePositions, this.snakeDirection);
+    this.particleSystem.draw(this.ctx);
+
+    this.ctx.restore();
   }
 
   private loop(currentTime: number) {
@@ -189,6 +231,32 @@ class Game {
 
   public getScoreDisplay() {
     return this.scoreDisplay;
+  }
+
+  public getGameStats() {
+    const currentTime = Date.now();
+    const timeSurvived = Math.floor((currentTime - this.gameStartTime) / 1000);
+    const highScore = Number.parseInt(
+      localStorage.getItem("snake-high-score") || "0"
+    );
+    const isNewHighScore = this.foodCounts.basic > highScore;
+
+    return {
+      finalScore: this.foodCounts.basic,
+      highScore: Math.max(highScore, this.foodCounts.basic),
+      timeSurvived,
+      foodsEaten: this.foodCounts.basic,
+      maxLength: this.maxSnakeLength,
+      isNewHighScore,
+    };
+  }
+
+  public getGameOverScreen() {
+    return this.gameOverScreen;
+  }
+
+  public getSoundManager() {
+    return this.soundManager;
   }
 }
 
@@ -216,6 +284,7 @@ class GameController {
 
     this.startMenu.add(
       createButton("Start", () => {
+        this.game.getSoundManager().play("click");
         this.game.startGame();
         this.startMenu.hide();
         gameOverlay.hide();
@@ -226,15 +295,24 @@ class GameController {
       normal: () => this.game.setDifficulty("normal"),
       hard: () => this.game.setDifficulty("hard"),
     });
+    this.startMenu.add(
+      createButton("🔊 Sound: ON", (event: MouseEvent) => {
+        const isEnabled = this.game.getSoundManager().toggle();
+        const button = event.target as HTMLButtonElement;
+        button.textContent = isEnabled ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+      })
+    );
 
     this.pauseMenu.add(
       createButton("Resume", () => {
+        this.game.getSoundManager().play("click");
         this.game.resumeGame();
         this.pauseMenu.hide();
       })
     );
     this.pauseMenu.add(
       createButton("Main Menu", () => {
+        this.game.getSoundManager().play("click");
         this.pauseMenu.hide();
         this.startMenu.show();
         this.game.resetAttributes();
@@ -245,6 +323,21 @@ class GameController {
     this.pauseMenu.mount(document.body);
     this.startMenu.show();
     this.pauseMenu.hide();
+
+    this.game.getGameOverScreen().mount(document.body);
+    this.game.getGameOverScreen().onTryAgain(() => {
+      this.game.getSoundManager().play("click");
+      this.game.getGameOverScreen().hide();
+      this.game.resetAttributes();
+      this.game.startGame();
+    });
+
+    this.game.getGameOverScreen().onMainMenu(() => {
+      this.game.getSoundManager().play("click");
+      this.game.getGameOverScreen().hide();
+      this.game.resetAttributes();
+      this.startMenu.show();
+    });
 
     requestAnimationFrame(() => {
       this.startMenu.resize(canvasRect.width + 10, canvasRect.height + 10);
@@ -267,8 +360,13 @@ class GameController {
     this.game.setCallbacks({
       pause: () => this.pauseMenu.show(),
       over: () => {
-        this.pauseMenu.show();
-        this.game.resetAttributes();
+        const stats = this.game.getGameStats();
+        if (stats.isNewHighScore) {
+          this.game.getSoundManager().play("highScore");
+        }
+        setTimeout(() => {
+          this.game.getGameOverScreen().show(stats);
+        }, 500);
       },
     });
 
