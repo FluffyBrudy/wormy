@@ -4,8 +4,8 @@ import {
   gridWidth,
   screenHeight,
   screenWidth,
-} from "./constants";
-import type { TCoor } from "./types";
+} from "../constants";
+import type { TCoor } from "../types";
 
 export function drawGrid(ctx: CanvasRenderingContext2D) {
   ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";

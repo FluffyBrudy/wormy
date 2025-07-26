@@ -5,14 +5,14 @@ import {
   screenHeight,
   screenWidth,
 } from "./constants";
-import { drawFood, foodAnimationHandler, generateFood } from "./food";
-import { drawGrid, hasCollidedWithWalls } from "./grid";
+import { drawFood, foodAnimationHandler, generateFood } from "./sprites/food";
+import { drawGrid, hasCollidedWithWalls } from "./sprites/grid";
 import {
   drawSnake,
   growSnake,
   hasCollidedWithSelf,
   updateSnake,
-} from "./snake";
+} from "./sprites/snake";
 import type { TCallbackMap, TCoor, TDirection } from "./types";
 import { createButton } from "./ui/button";
 import { UIMenu } from "./ui/menu";
@@ -20,6 +20,7 @@ import { isCoordinateEqual } from "./utils/math.utils";
 import "./style.css";
 import { ScoreDisplay } from "./ui/score-display";
 import { GameOverlay } from "./ui/game-overlay";
+import { Queue } from "@typinghare/stack-queue";
 
 class Game {
   private ctx: CanvasRenderingContext2D;
@@ -96,8 +97,7 @@ class Game {
     this.snakePositions = defaultSnakeBody.slice();
     this.foodCounts.basic = 0;
     this.scoreDisplay.reset();
-    this.isPaused = false;
-    this.isStarted = false;
+    this.isPaused = true;
     this.foodPosition = generateFood(this.snakePositions);
   }
 
@@ -128,7 +128,7 @@ class Game {
     if (hasCollided) {
       this.snakePositions = defaultSnakeBody.slice();
       this.isPaused = true;
-      this.callbackMap.pause();
+      this.callbackMap.over();
     }
   }
 
@@ -267,7 +267,10 @@ class GameController {
 
     this.game.setCallbacks({
       pause: () => this.pauseMenu.show(),
-      over: () => this.startMenu.show(),
+      over: () => {
+        this.pauseMenu.show();
+        this.game.resetAttributes();
+      },
     });
 
     this.registerEvents();

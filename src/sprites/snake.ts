@@ -1,6 +1,6 @@
-import { cellSize, DIRECTIONS, HEAD } from "./constants";
-import type { TCoor, TDirection } from "./types";
-import { isCoordinateEqual } from "./utils/math.utils";
+import { cellSize, DIRECTIONS, HEAD } from "../constants";
+import type { TCoor, TDirection } from "../types";
+import { isCoordinateEqual } from "../utils/math.utils";
 
 type TSegment = "head" | "body" | "tail";
 

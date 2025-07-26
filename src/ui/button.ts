@@ -28,3 +28,7 @@ export function createButton(
 
   return button;
 }
+
+export function changeButtonText(button: HTMLButtonElement, text: string) {
+  button.textContent = text;
+}

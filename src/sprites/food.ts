@@ -1,6 +1,6 @@
-import { cellSize, foods, gridHeight, gridWidth, INVALID } from "./constants";
-import type { TCoor } from "./types";
-import { choice, shuffle } from "./utils/random";
+import { cellSize, foods, gridHeight, gridWidth, INVALID } from "../constants";
+import type { TCoor } from "../types";
+import { choice, shuffle } from "../utils/random";
 
 export function drawFood(
   ctx: CanvasRenderingContext2D,
