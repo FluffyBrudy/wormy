@@ -6,7 +6,7 @@ export function randint(_min: number, _max: number) {
 export function choice<T>(iterable: Array<T>) {
   const length = iterable.length;
   if (length < 1) throw new Error("sequence cannot be empty");
-  const indexChoice = randint(0, length);
+  const indexChoice = randint(0, length - 1);
   return iterable[indexChoice];
 }
 

@@ -40,7 +40,7 @@ class Game {
 
   private foodPosition = generateFood(this.snakePositions);
   private foodAnimationHandler: ReturnType<typeof foodAnimationHandler>;
-  private foodCounts = { basic: 100 };
+  private foodCounts = { basic: 0 };
 
   private isPaused = false;
   private isStarted = false;
